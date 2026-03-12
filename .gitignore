@@ -1,0 +1,19 @@
+
+# Python
+
+**pycache**/
+*.pyc
+
+# Simulation outputs
+
+output/
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Virtual env
+
+venv/
+.env/
