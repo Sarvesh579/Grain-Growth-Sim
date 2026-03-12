@@ -28,6 +28,5 @@ Place your shape image inside:
 input_shapes/shape.png
 ```
 ### Note:
-White = material region
-Black = outside region.
-
+- White = material region.
+- Black = outside region.
