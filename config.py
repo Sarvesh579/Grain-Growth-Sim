@@ -1,0 +1,13 @@
+MASK_PATH = "input_shapes/shape.png"
+
+VID_FOLDER = "output/vids"
+FRAME_FOLDER = "output/frames"
+
+NUM_SEEDS = 50
+TEMPERATURE = 0.5
+GRAINS_COMPETE = False
+
+FRAME_INTERVAL = 3000
+FPS = 24
+TARGET_FRAMES = 1200
+DURATION = 5

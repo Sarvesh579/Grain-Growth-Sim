@@ -1,68 +1,71 @@
 import os
 import shutil
-import numpy as np
-import math
 from tqdm import tqdm
 from image_loader import load_shape_mask
 from lattice import initialize_lattice
 from monte_carlo import monte_carlo_step
 from visualizer import save_frame, animate_frames
+from config import *
+import config
+import argparse
 
-MASK_PATH = "input_shapes/shape.png"
-NUM_SEEDS = 50
-TEMPERATURE = 0.5
-FRAME_INTERVAL = 3000
-FPS = 24
-DURATION = 5
-TARGET_FRAMES = 1200
-GRAINS_COMPETE = True
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seeds", type=int, default=config.NUM_SEEDS)
+    parser.add_argument("--temp", type=float, default=config.TEMPERATURE)
+    parser.add_argument("--mask", type=str, default=config.MASK_PATH)
+    parser.add_argument("--fps", type=int, default=config.FPS)
+    return parser.parse_args()
 
 def clear_output():
-    folder = "output"
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-    os.makedirs(folder)
+    if os.path.exists(FRAME_FOLDER):
+        shutil.rmtree(FRAME_FOLDER)
+    os.makedirs(FRAME_FOLDER)
 
-def is_shape_filled(grid, mask, total_white):
-    filled_pixels = ((grid != -1) & mask).sum()
-    return filled_pixels >= total_white
-
-def reduce_frames_to_target(folder, target_frames):
-    files = sorted([
-        f for f in os.listdir(folder)
-        if f.startswith("frame_")
-    ])
-    total = len(files)
-    if total <= target_frames:
+def reduce_frames_to_target(folder,target_frames):
+    files=sorted([f for f in os.listdir(folder) if f.startswith("frame_")])
+    total=len(files)
+    if total<=target_frames:
         return
-    step = total / target_frames
-    keep_indices = set(int(i * step) for i in range(target_frames))
-    for idx, f in enumerate(files):
-        if idx not in keep_indices:
-            os.remove(os.path.join(folder, f))
+    step=total/target_frames
+    keep=set(int(i*step) for i in range(target_frames))
+    for idx,f in enumerate(files):
+        if idx not in keep:
+            os.remove(os.path.join(folder,f))
 
 def main():
     clear_output()
-    mask = load_shape_mask(MASK_PATH, resize=(200,200))
-    grid, orientations = initialize_lattice(mask, NUM_SEEDS)
-    total_pixels = mask.sum()
-    i = 0
-    frame_count = 0
+    args = parse_args()
+    NUM_SEEDS = args.seeds
+    TEMPERATURE = args.temp
+    MASK_PATH = args.mask
+    FPS = args.fps
+    mask=load_shape_mask(MASK_PATH,resize=(200,200))
+    grid,orientations=initialize_lattice(mask,NUM_SEEDS)
+    total_pix=int(mask.sum())
+    filled_pix=NUM_SEEDS
+    step=0
+    frame_count=0
     print("Running Monte Carlo Simulation")
-    pbar = tqdm(unit="steps")
+    pbar=tqdm(total=total_pix,unit="pixels")
     while True:
-        monte_carlo_step(grid, orientations, mask, TEMPERATURE, GRAINS_COMPETE)
-        if i % FRAME_INTERVAL == 0:
-            save_frame(grid, mask, frame_count)
-            frame_count += 1
-            if is_shape_filled(grid, mask, total_pixels):
+        new_fill=monte_carlo_step(grid,orientations,mask,TEMPERATURE,GRAINS_COMPETE)
+        if new_fill:
+            filled_pix+=1
+        if step%FRAME_INTERVAL==0:
+            save_frame(grid,mask,frame_count)
+            frame_count+=1
+            pbar.n=filled_pix
+            pbar.set_postfix({"steps":step})
+            pbar.refresh()
+            if filled_pix>=total_pix:
                 break
-        i += 1
-        pbar.update(1)
+        step+=1
     pbar.close()
+    print("Reducing frames...")
+    reduce_frames_to_target(FRAME_FOLDER,TARGET_FRAMES)
     print("Simulation complete")
-    animate_frames(fps=FPS)
+    animate_frames(FRAME_FOLDER,fps=FPS)
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()

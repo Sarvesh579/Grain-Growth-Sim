@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from matplotlib import animation
+from matplotlib.animation import FuncAnimation
+from config import FRAME_FOLDER, FPS
 
-def save_frame(grid, mask, step, folder="output"):
+def save_frame(grid, mask, step, folder=FRAME_FOLDER):
     os.makedirs(folder, exist_ok=True)
     display = grid.copy().astype(float)
     display[~mask] = np.nan
@@ -16,11 +17,7 @@ def save_frame(grid, mask, step, folder="output"):
     plt.savefig(filename, bbox_inches="tight", pad_inches=0)
     plt.close()
 
-def animate_frames(folder="output", fps=30):
-    import os
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation
-
+def animate_frames(folder=FRAME_FOLDER, fps=FPS):
     files = sorted([
         f"{folder}/{f}" for f in os.listdir(folder)
         if f.startswith("frame_")
